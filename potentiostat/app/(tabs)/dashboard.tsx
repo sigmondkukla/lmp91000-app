@@ -168,7 +168,7 @@ export default function DashboardScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Appbar.Header elevated statusBarHeight={0}>
+            <Appbar.Header>
                 <Appbar.BackAction onPress={() => { router.back() }}></Appbar.BackAction>
                 <Appbar.Content title="Experiment" />
                 <Appbar.Action icon={connectedDevice ? "bluetooth-connect" : "bluetooth-off"} onPress={() => { router.navigate('/') }} />
