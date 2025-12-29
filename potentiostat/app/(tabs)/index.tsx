@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Banner, Button, Card, Icon, Portal, Snackbar, Text, useTheme } from 'react-native-paper';
+import { Appbar, Banner, Button, Card, Icon, Portal, Snackbar, Text, useTheme } from 'react-native-paper';
 import { Device } from 'react-native-ble-plx';
 import { useBle } from '@/contexts/BleContext';
 import { useRouter } from 'expo-router';
@@ -22,7 +22,7 @@ export default function ScannerScreen() {
       setSnackbarMessage(`Connected to ${device.name || 'Device'}`);
       setSnackbarVisible(true);
       // Auto-navigate to dashboard after successful connection
-      router.push('/dashboard'); 
+      router.push('/dashboard');
     } catch (e) {
       setSnackbarMessage(`Failed to connect: ${(e as Error).message}`);
       setSnackbarVisible(true);
@@ -60,15 +60,19 @@ export default function ScannerScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => { router.back() }} />
+        <Appbar.Content title="Connection" />
+        <Appbar.Action icon={isScanning ? "stop" : "magnify"} onPress={isScanning ? stopScan : startScan} />
+      </Appbar.Header>
       <Portal.Host>
         <View style={styles.content}>
-          
+
           <View style={styles.headerActions}>
-            <Button 
-              icon={isScanning ? "stop" : "magnify"} 
-              mode="contained-tonal" 
+            <Button
+              icon={isScanning ? "stop" : "magnify"}
+              mode="contained-tonal"
               onPress={isScanning ? stopScan : startScan}
             >
               {isScanning ? 'Stop Scan' : 'Scan Bluetooth'}
@@ -78,7 +82,7 @@ export default function ScannerScreen() {
           <Banner
             visible={scannedDevices.size === 0 && !isScanning}
             actions={[{ label: 'Start Scan', onPress: startScan }]}
-            icon={({size}) => <Icon source="bluetooth-off" size={size} />}
+            icon={({ size }) => <Icon source="bluetooth-off" size={size} />}
           >
             No devices found. Ensure your Potentiostat is powered on.
           </Banner>
@@ -101,7 +105,7 @@ export default function ScannerScreen() {
           </Portal>
         </View>
       </Portal.Host>
-    </SafeAreaView>
+    </View>
   );
 }
 

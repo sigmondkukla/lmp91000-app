@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Platform, PermissionsAndroid, Permission, Linking } from 'react-native';
 import { Appbar, Button, Chip, Divider, Portal, Snackbar, Text, useTheme } from 'react-native-paper';
 import { useBle } from '@/contexts/BleContext';
+import { router } from 'expo-router';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -26,10 +27,10 @@ export default function SettingsScreen() {
       setConnectPermission(connect);
       setLocationPermission(location);
     } else {
-        // iOS permissions are handled by the OS, usually assumed true if app is running
-        setScanPermission(true);
-        setConnectPermission(true);
-        setLocationPermission(true);
+      // iOS permissions are handled by the OS, usually assumed true if app is running
+      setScanPermission(true);
+      setConnectPermission(true);
+      setLocationPermission(true);
     }
   };
 
@@ -43,14 +44,14 @@ export default function SettingsScreen() {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         ]);
 
-        const allGranted = 
-            result['android.permission.BLUETOOTH_SCAN'] === 'granted' &&
-            result['android.permission.BLUETOOTH_CONNECT'] === 'granted';
+        const allGranted =
+          result['android.permission.BLUETOOTH_SCAN'] === 'granted' &&
+          result['android.permission.BLUETOOTH_CONNECT'] === 'granted';
 
         if (allGranted) {
-            setSnackbarMessage('Permissions granted successfully');
+          setSnackbarMessage('Permissions granted successfully');
         } else {
-            setSnackbarMessage('Some permissions were denied');
+          setSnackbarMessage('Some permissions were denied');
         }
         setSnackbarVisible(true);
         checkPermissions(); // Refresh UI
@@ -58,8 +59,8 @@ export default function SettingsScreen() {
         console.warn(err);
       }
     } else {
-        // On iOS, open settings
-        Linking.openSettings();
+      // On iOS, open settings
+      Linking.openSettings();
     }
   };
 
@@ -75,8 +76,8 @@ export default function SettingsScreen() {
         setSnackbarVisible(true);
       }
     } else {
-        setSnackbarMessage('On iOS, please enable Bluetooth in Control Center');
-        setSnackbarVisible(true);
+      setSnackbarMessage('On iOS, please enable Bluetooth in Control Center');
+      setSnackbarVisible(true);
     }
   };
 
@@ -88,54 +89,55 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
+        <Appbar.BackAction onPress={() => { router.back() }} />
         <Appbar.Content title="Settings" />
       </Appbar.Header>
 
       <View style={styles.content}>
-        
+
         {/* Permission Group */}
         <View style={styles.group}>
-            <Text variant="titleMedium">Permissions</Text>
-            <Text variant="bodyMedium" style={{ marginBottom: 10 }}>
-                Status of required Android permissions:
-            </Text>
+          <Text variant="titleMedium">Permissions</Text>
+          <Text variant="bodyMedium" style={{ marginBottom: 10 }}>
+            Status of required Android permissions:
+          </Text>
 
-            <View style={styles.row}>
-                <Text>Bluetooth Scan</Text>
-                {scanPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
-            </View>
+          <View style={styles.row}>
+            <Text>Bluetooth Scan</Text>
+            {scanPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
+          </View>
 
-            <View style={styles.row}>
-                <Text>Bluetooth Connect</Text>
-                {connectPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
-            </View>
+          <View style={styles.row}>
+            <Text>Bluetooth Connect</Text>
+            {connectPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
+          </View>
 
-            <View style={styles.row}>
-                <Text>Fine Location</Text>
-                {locationPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
-            </View>
+          <View style={styles.row}>
+            <Text>Fine Location</Text>
+            {locationPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
+          </View>
 
-            <Button 
-                mode="contained-tonal" 
-                icon="shield-account" 
-                onPress={requestAndroidPermissions}
-                style={{ marginTop: 10 }}
-            >
-                Request Permissions
-            </Button>
+          <Button
+            mode="contained-tonal"
+            icon="shield-account"
+            onPress={requestAndroidPermissions}
+            style={{ marginTop: 10 }}
+          >
+            Request Permissions
+          </Button>
         </View>
 
         <Divider style={{ marginVertical: 20 }} />
 
         {/* Bluetooth Group */}
         <View style={styles.group}>
-            <Text variant="titleMedium">Bluetooth Adapter</Text>
-            <View style={[styles.row, { marginTop: 10 }]}>
-                <Text>Ensure Bluetooth is on</Text>
-                <Button mode="contained-tonal" icon="bluetooth" onPress={enableBluetooth}>
-                    Enable
-                </Button>
-            </View>
+          <Text variant="titleMedium">Bluetooth Adapter</Text>
+          <View style={[styles.row, { marginTop: 10 }]}>
+            <Text>Ensure Bluetooth is on</Text>
+            <Button mode="contained-tonal" icon="bluetooth" onPress={enableBluetooth}>
+              Enable
+            </Button>
+          </View>
         </View>
 
       </View>
