@@ -1,7 +1,9 @@
 <p align="center">
-  <img src="https://github.com/sigmondkukla/lmp91000-app/blob/master/potentiostat/assets/images/icon.png?raw=true" alt="App icon" width="256" style="border-radius: 16px"/>
-  Icon credit [Justin Bouchard](https://www.linkedin.com/in/justinpbouchard/)
+  <img src="https://github.com/sigmondkukla/lmp91000-app/blob/master/potentiostat/assets/images/icon.png?raw=true" alt="App icon" width="128"/>
 </p>
+<div align="center">
+Icon credit [Justin Bouchard](https://www.linkedin.com/in/justinpbouchard/)
+</div>
 
 # LMP91000 Potentiostat app
 
