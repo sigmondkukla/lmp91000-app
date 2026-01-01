@@ -19,8 +19,8 @@ interface Props {
 export default function CVConfigForm({ onChange }: Props) {
   // Voltages (mV)
   const [initE, setInitE] = useState('0');
-  const [vertex1, setVertex1] = useState('500');
-  const [vertex2, setVertex2] = useState('-500');
+  const [vertex1, setVertex1] = useState('100');
+  const [vertex2, setVertex2] = useState('-100');
   
   // Timing / Speed
   const [scanRate, setScanRate] = useState('100'); // mV/s

@@ -24,16 +24,16 @@ export default function CAConfigForm({ onChange }: Props) {
   const [quietTime, setQuietTime] = useState('1000');
   
   // Step 1
-  const [e1, setE1] = useState('500');
-  const [d1, setD1] = useState('5000');
+  const [e1, setE1] = useState('200');
+  const [d1, setD1] = useState('100');
 
   // Step 2
-  const [e2, setE2] = useState('-500');
-  const [d2, setD2] = useState('5000');
+  const [e2, setE2] = useState('-200');
+  const [d2, setD2] = useState('100');
 
-  // Step 3 (Optional usually, but struct requires it. Set duration 0 to skip)
-  const [e3, setE3] = useState('0');
-  const [d3, setD3] = useState('0');
+  // Step 3
+  const [e3, setE3] = useState('200');
+  const [d3, setD3] = useState('100');
 
   // Post-Experiment
   const [finalE, setFinalE] = useState('0');
