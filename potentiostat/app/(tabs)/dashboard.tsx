@@ -17,7 +17,7 @@ import { router } from 'expo-router';
 type RawDataPoint = {
     time: number;    // ms
     voltage: number; // mV
-    current: number; // uA or A
+    current: number; // A
 };
 
 type AxisOption = 'time' | 'voltage' | 'current';
@@ -69,6 +69,7 @@ export default function DashboardScreen() {
         if (!connectedDevice || !configParams) return;
 
         try {
+            // 1. Pack Configuration
             let configBuffer: Buffer | null = null;
 
             if (experimentType === 'cv') {
@@ -106,10 +107,26 @@ export default function DashboardScreen() {
                 return;
             }
 
-            // ... Write Characteristic logic ...
+            console.log("Starting Experiment...", experimentType);
+
+            // 2. Prepare UI & Stream
+            setChartData([]);     // Clear old graph
+            setIsRunning(true);   // Update UI state
+            startMonitoring();    // Subscribe to notifications *before* triggering start
+
+            // 3. Write Config (Triggers Start on Firmware)
+            await connectedDevice.writeCharacteristicWithResponseForService(
+                PotentiostatService.POTENTIOSTAT_SERVICE_UUID,
+                PotentiostatService.CONFIG_CHARACTERISTIC_UUID,
+                configBuffer.toString('base64')
+            );
+
+            console.log("Config written, experiment started.");
 
         } catch (e) {
-            console.error(e);
+            console.error("Start Failed:", e);
+            setIsRunning(false); // revert state on error
+            // implement stopMonitoring() for cleanup
         }
     };
 
@@ -175,7 +192,6 @@ export default function DashboardScreen() {
                 <Appbar.Action icon="chart-box-outline" onPress={() => setShowGraphSettings(!showGraphSettings)} />
             </Appbar.Header>
 
-            {/* Graph Settings Overlay */}
             {showGraphSettings && (
                 <View style={[styles.graphSettings, { backgroundColor: theme.colors.elevation.level2 }]}>
                     <Text variant="labelMedium" style={{ marginBottom: 4 }}>X Axis</Text>
@@ -204,89 +220,91 @@ export default function DashboardScreen() {
                 </View>
             )}
 
-            <View style={styles.chartContainer}>
-                {/* Dynamic Chart */}
-                <CartesianChart
-                    data={chartData}
-                    xKey={xKey}   // <--- Dynamic X
-                    yKeys={[yKey]} // <--- Dynamic Y
-                    padding={16}
-                >
-                    {({ points }) => (
-                        <Line
-                            points={points[yKey]} // <--- Read specific Y key points
-                            color={theme.colors.primary}
-                            strokeWidth={2}
-                            animate={{ type: "timing", duration: 0 }}
-                        />
+            <ScrollView>
+
+                <View style={styles.chartContainer}>
+                    <CartesianChart
+                        data={chartData}
+                        xKey={xKey}
+                        yKeys={[yKey]}
+                        padding={16}
+                    >
+                        {({ points }) => (
+                            <Line
+                                points={points[yKey]}
+                                color={theme.colors.primary}
+                                strokeWidth={2}
+                                animate={{ type: "timing", duration: 100 }}
+                            />
+                        )}                        
+                    </CartesianChart>
+
+                    <Text style={styles.axisLabelX}>{xKey.toUpperCase()}</Text>
+                    <Text style={styles.axisLabelY}>{yKey.toUpperCase()}</Text>
+
+                    {chartData.length === 0 && (
+                        <View style={styles.chartPlaceholder}>
+                            <Text>No Data</Text>
+                        </View>
                     )}
-                </CartesianChart>
-
-                <Text style={styles.axisLabelX}>{xKey.toUpperCase()}</Text>
-                <Text style={styles.axisLabelY}>{yKey.toUpperCase()}</Text>
-
-                {chartData.length === 0 && (
-                    <View style={styles.chartPlaceholder}>
-                        <Text>No Data</Text>
-                    </View>
-                )}
-            </View>
-
-            <Divider />
-
-            <ScrollView style={styles.controls}>
-                <SegmentedButtons
-                    value={experimentType}
-                    onValueChange={handleTypeChange}
-                    buttons={[
-                        { value: 'cv', label: 'CV' },
-                        { value: 'swv', label: 'SWV' },
-                        { value: 'dpv', label: 'DPV' },
-                        { value: 'ca', label: 'CA' },
-                    ]}
-                    style={styles.segmented}
-                />
-
-                <Card mode="outlined" style={styles.configCard}>
-                    <Card.Content>
-                        {/* Dynamically render the correct form */}
-                        {experimentType === 'cv' && (
-                            <CVConfigForm onChange={setConfigParams} />
-                        )}
-                        {experimentType === 'swv' && (
-                            <SWVConfigForm onChange={setConfigParams} />
-                        )}
-                        {experimentType === 'dpv' && (
-                            <DPVConfigForm onChange={setConfigParams} />
-                        )}
-                        {experimentType === 'ca' && (
-                            <CAConfigForm onChange={setConfigParams} />
-                        )}
-                    </Card.Content>
-                </Card>
-
-                <View style={styles.actionButtons}>
-                    <Button
-                        mode="contained"
-                        icon="play"
-                        onPress={handleStart}
-                        // Disable if running OR if configParams is null (form invalid)
-                        disabled={isRunning || !connectedDevice || !configParams}
-                        contentStyle={{ height: 48 }}
-                    >
-                        Start Experiment
-                    </Button>
-
-                    <Button
-                        mode="outlined"
-                        icon="download"
-                        onPress={() => console.log("Export CSV")}
-                        disabled={chartData.length === 0}
-                    >
-                        Export CSV
-                    </Button>
                 </View>
-                <View style={{ height: 20 }} />
+
+                <Divider />
+
+
+                <View style={styles.controls}>
+                    <SegmentedButtons
+                        value={experimentType}
+                        onValueChange={handleTypeChange}
+                        buttons={[
+                            { value: 'cv', label: 'CV' },
+                            { value: 'swv', label: 'SWV' },
+                            { value: 'dpv', label: 'DPV' },
+                            { value: 'ca', label: 'CA' },
+                        ]}
+                        style={styles.segmented}
+                    />
+
+                    <Card mode="outlined" style={styles.configCard}>
+                        <Card.Content>
+                            {/* Dynamically render the correct form */}
+                            {experimentType === 'cv' && (
+                                <CVConfigForm onChange={setConfigParams} />
+                            )}
+                            {experimentType === 'swv' && (
+                                <SWVConfigForm onChange={setConfigParams} />
+                            )}
+                            {experimentType === 'dpv' && (
+                                <DPVConfigForm onChange={setConfigParams} />
+                            )}
+                            {experimentType === 'ca' && (
+                                <CAConfigForm onChange={setConfigParams} />
+                            )}
+                        </Card.Content>
+                    </Card>
+
+                    <View style={styles.actionButtons}>
+                        <Button
+                            mode="contained"
+                            icon="play"
+                            onPress={handleStart}
+                            // Disable if running OR if configParams is null (form invalid)
+                            disabled={isRunning || !connectedDevice || !configParams}
+                            contentStyle={{ height: 48 }}
+                        >
+                            Start Experiment
+                        </Button>
+
+                        <Button
+                            mode="outlined"
+                            icon="download"
+                            onPress={() => console.log("Export CSV")}
+                            disabled={chartData.length === 0}
+                        >
+                            Export CSV
+                        </Button>
+                    </View>
+                </View>
             </ScrollView>
         </View>
     );
