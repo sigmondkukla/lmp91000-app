@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 export default function ScannerScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { scannedDevices, isScanning, startScan, stopScan, connectToDevice, connectedDevice } = useBle();
+  const { scannedDevices, isScanning, startScan, stopScan, connectToDevice, disconnectDevice, connectedDevice } = useBle();
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -38,26 +38,39 @@ export default function ScannerScreen() {
     return (
       <Card style={styles.card}>
         <Card.Title
-          title={item.name || item.localName || 'Unknown Device'}
+          title={item.name || 'Unknown Device'}
           subtitle={item.id}
-          left={(props) => <Icon source="bluetooth" size={30} color={theme.colors.primary} />}
+          left={(props) => <Icon source={isConnected ? "bluetooth-connect" : "bluetooth"} size={24} color={isConnected ? theme.colors.primary : theme.colors.onSurface} />}
+          right={(props) => (
+             !isConnected ? <Text variant="labelMedium" style={{ marginRight: 16 }}>{item.rssi} dBm</Text> : null
+          )}
+          // RSSI shown only when not connected because it may not update while connected
         />
-        <Card.Content>
-          <Text variant="bodyMedium">RSSI: {item.rssi}</Text>
-        </Card.Content>
-        <Card.Actions>
+        <Card.Actions style={{ paddingTop: 0, justifyContent: 'flex-end', gap: 8 }}>
+          
+          {isConnected && (
+              <Button 
+                compact 
+                onPress={() => disconnectDevice()}
+                icon={"bluetooth-off"}
+              >
+                Disconnect
+              </Button>
+          )}
+
           <Button
-            mode={isConnected ? "outlined" : "contained"}
+            compact
             onPress={() => isConnected ? router.push('/dashboard') : handleConnect(item)}
             loading={isConnecting}
             disabled={isConnecting}
+            icon={isConnected ? "chart-line" : "bluetooth-connect"}
           >
-            {isConnected ? "Go to Experiment" : isConnecting ? "Connecting..." : "Connect"}
+            {isConnected ? "Open Experiment" : isConnecting ? "Connecting" : "Connect"}
           </Button>
         </Card.Actions>
       </Card>
     );
-  };
+};
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -84,7 +97,8 @@ export default function ScannerScreen() {
             actions={[{ label: 'Start Scan', onPress: startScan }]}
             icon={({ size }) => <Icon source="bluetooth-off" size={size} />}
           >
-            No devices found. Ensure your Potentiostat is powered on.
+            No devices found yet! Please ensure that the potentiostat is powered on and in range,
+            then press Start Scan to discover it.
           </Banner>
 
           <FlatList
