@@ -31,10 +31,11 @@ export default function DashboardScreen() {
     // BLE state
     const { connectedDevice } = useBle();
     const resultsSubscriptionRef = useRef<any>(null);
-    const controlSubscriptionRef = useRef<any>(null);
+    const statusSubscriptionRef = useRef<any>(null);
 
     const [experimentType, setExperimentType] = useState('cv'); // 'cv' | 'swv' | 'dpv' | 'ca' current tab
     const [isRunning, setIsRunning] = useState(false); // experiment running state, can be updated from BLE
+    const [isConfigured, setIsConfigured] = useState(false); // whether experiment config is applied
     const [results, setResults] = useState<DataPoint[]>([]); // stores all data points
 
     // axis options
@@ -112,7 +113,21 @@ export default function DashboardScreen() {
                 configBuffer.toString('base64')
             );
 
-            setSnackBarMessage("Configuration applied successfully");
+            // read the status characteristic to confirm configured
+            const statusChar = await connectedDevice.readCharacteristicForService(
+                ExperimentService.EXPERIMENT_SERVICE_UUID,
+                ExperimentService.EXPERIMENT_STATUS_UUID
+            );
+            const statusBuffer = Buffer.from(statusChar.value || '', 'base64');
+            const statusByte = statusBuffer.readUInt8(0);
+            const configured = (statusByte & 0x02) !== 0;
+            setIsConfigured(configured);
+
+            if (configured) {
+                setSnackBarMessage("Configuration applied successfully");
+            } else {
+                setSnackBarMessage("Failed to apply configuration");
+            }
             setSnackBarVisible(true);
 
         } catch (e) {
@@ -151,7 +166,7 @@ export default function DashboardScreen() {
     const subscribeExperimentStatus = () => {
         if (!connectedDevice) return;
 
-        controlSubscriptionRef.current = connectedDevice.monitorCharacteristicForService(
+        statusSubscriptionRef.current = connectedDevice.monitorCharacteristicForService(
             ExperimentService.EXPERIMENT_SERVICE_UUID,
             ExperimentService.EXPERIMENT_STATUS_UUID,
             (error, char) => {
@@ -163,8 +178,10 @@ export default function DashboardScreen() {
                 console.log("Control status byte:", statusByte);
 
                 const running = (statusByte & 0x01) !== 0;
+                const configured = (statusByte & 0x02) !== 0;
 
                 setIsRunning(running);
+                setIsConfigured(configured);
             }
         );
     };
@@ -174,7 +191,7 @@ export default function DashboardScreen() {
         try {
             setResults([]); // clear prior experiment data
             subscribeExperimentResults(); // to get data points
-            subscribeExperimentStatus(); // to get running state updates
+            subscribeExperimentStatus(); // to get status updates
 
             await connectedDevice.writeCharacteristicWithResponseForService(
                 ExperimentService.EXPERIMENT_SERVICE_UUID,
@@ -183,7 +200,6 @@ export default function DashboardScreen() {
             );
         } catch (e) { console.error(e); }
     };
-
 
     const handleStop = async () => {
         if (!connectedDevice) return;
@@ -199,17 +215,13 @@ export default function DashboardScreen() {
             resultsSubscriptionRef.current.remove();
             resultsSubscriptionRef.current = null;
         }
-        if (controlSubscriptionRef.current) {
-            controlSubscriptionRef.current.remove();
-            controlSubscriptionRef.current = null;
-        }
     };
 
     const exportCSV = async () => {
         if (results.length === 0) return;
 
         try {
-            const header = "Time (ms),Voltage (mV),Current (uA)\n";
+            const header = "Time (ms),Voltage (mV),Current (A)\n";
             const rows = results.map(dp => `${dp.time},${dp.voltage},${dp.current}`).join("\n");
             const csvString = header + rows;
 
@@ -220,16 +232,20 @@ export default function DashboardScreen() {
 
             if (await Sharing.isAvailableAsync()) {
                 await Sharing.shareAsync(file.uri, {
-                    mimeType: 'text/csv',
+                    mimeType: 'text/plain',
                     dialogTitle: 'Export results',
                     UTI: 'public.comma-separated-values-text' // iOS
                 });
             } else {
                 console.warn("Sharing not available");
+                setSnackBarMessage("Sharing not available on this device");
+                setSnackBarVisible(true);
             }
 
         } catch (error) {
             console.error("Error exporting CSV:", error);
+            setSnackBarMessage("Error exporting CSV");
+            setSnackBarVisible(true);
         }
     };
 
@@ -237,7 +253,7 @@ export default function DashboardScreen() {
     useEffect(() => {
         return () => {
             if (resultsSubscriptionRef.current) resultsSubscriptionRef.current.remove();
-            if (controlSubscriptionRef.current) controlSubscriptionRef.current.remove();
+            if (statusSubscriptionRef.current) statusSubscriptionRef.current.remove();
         };
     }, []);
 
@@ -330,7 +346,7 @@ export default function DashboardScreen() {
                                     mode="contained"
                                     icon={isRunning ? "stop" : "play"}
                                     onPress={isRunning ? handleStop : handleStart}
-                                    disabled={!connectedDevice || !configParams}
+                                    disabled={!connectedDevice || !isConfigured}
                                 >
                                     {isRunning ? "Stop" : "Start"}
                                 </Button>
