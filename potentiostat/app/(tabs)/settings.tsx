@@ -76,7 +76,7 @@ export default function SettingsScreen() {
         setSnackbarVisible(true);
       }
     } else {
-      setSnackbarMessage('On iOS, please enable Bluetooth in Control Center');
+      setSnackbarMessage('Please enable Bluetooth in Control Center');
       setSnackbarVisible(true);
     }
   };
@@ -88,69 +88,71 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => { router.back() }} />
-        <Appbar.Content title="Settings" />
-      </Appbar.Header>
+      <Portal.Host>
+        <Appbar.Header>
+          <Appbar.BackAction onPress={() => { router.back() }} />
+          <Appbar.Content title="Settings" />
+        </Appbar.Header>
 
-      <View style={styles.content}>
+        <View style={styles.content}>
 
-        {/* Permission Group */}
-        <View style={styles.group}>
-          <Text variant="titleMedium">Permissions</Text>
-          <Text variant="bodyMedium" style={{ marginBottom: 10 }}>
-            Status of required Android permissions:
-          </Text>
+          {/* Permission Group */}
+          <View style={styles.group}>
+            <Text variant="titleMedium">Permissions</Text>
+            <Text variant="bodyMedium" style={{ marginBottom: 10 }}>
+              Status of required Android permissions:
+            </Text>
 
-          <View style={styles.row}>
-            <Text>Bluetooth Scan</Text>
-            {scanPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
-          </View>
+            <View style={styles.row}>
+              <Text>Bluetooth Scan Permission</Text>
+              {scanPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
+            </View>
 
-          <View style={styles.row}>
-            <Text>Bluetooth Connect</Text>
-            {connectPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
-          </View>
+            <View style={styles.row}>
+              <Text>Bluetooth Connect Permission</Text>
+              {connectPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
+            </View>
 
-          <View style={styles.row}>
-            <Text>Fine Location</Text>
-            {locationPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
-          </View>
+            <View style={styles.row}>
+              <Text>Fine Location Permission</Text>
+              {locationPermission ? <Chip icon="check">Granted</Chip> : <Chip icon="close" mode="outlined">Denied</Chip>}
+            </View>
 
-          <Button
-            mode="contained-tonal"
-            icon="shield-account"
-            onPress={requestAndroidPermissions}
-            style={{ marginTop: 10 }}
-          >
-            Request Permissions
-          </Button>
-        </View>
-
-        <Divider style={{ marginVertical: 20 }} />
-
-        {/* Bluetooth Group */}
-        <View style={styles.group}>
-          <Text variant="titleMedium">Bluetooth Adapter</Text>
-          <View style={[styles.row, { marginTop: 10 }]}>
-            <Text>Ensure Bluetooth is on</Text>
-            <Button mode="contained-tonal" icon="bluetooth" onPress={enableBluetooth}>
-              Enable
+            <Button
+              mode="contained-tonal"
+              icon="security"
+              onPress={requestAndroidPermissions}
+            // style={{ marginTop: 10 }}
+            >
+              Request Permissions
             </Button>
           </View>
+
+          <Divider style={{ marginVertical: 20 }} />
+
+          {/* Bluetooth Group */}
+          <View style={styles.group}>
+            <Text variant="titleMedium">Bluetooth</Text>
+            <View style={styles.row}>
+              <Text>Ensure Bluetooth is on</Text>
+              <Button mode="contained-tonal" icon="bluetooth" onPress={enableBluetooth}>
+                Enable
+              </Button>
+            </View>
+          </View>
+
         </View>
 
-      </View>
-
-      <Portal>
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          action={{ label: 'Dismiss', onPress: () => setSnackbarVisible(false) }}
-        >
-          {snackbarMessage}
-        </Snackbar>
-      </Portal>
+        <Portal>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            action={{ label: 'Dismiss', onPress: () => setSnackbarVisible(false) }}
+          >
+            {snackbarMessage}
+          </Snackbar>
+        </Portal>
+      </Portal.Host>
     </View>
   );
 }
