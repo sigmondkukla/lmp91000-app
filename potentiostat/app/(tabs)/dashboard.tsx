@@ -112,6 +112,9 @@ export default function DashboardScreen() {
                 configBuffer.toString('base64')
             );
 
+            setSnackBarMessage("Configuration applied successfully");
+            setSnackBarVisible(true);
+
         } catch (e) {
             console.error("Apply config failed: ", e);
         }
@@ -240,154 +243,156 @@ export default function DashboardScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <Appbar.Header>
-                <Appbar.BackAction onPress={() => { router.back() }}></Appbar.BackAction>
-                <Appbar.Content title="Experiment" />
-                <Appbar.Action icon={connectedDevice ? "bluetooth-connect" : "bluetooth-off"} onPress={() => { router.navigate('/') }} />
-                <Appbar.Action icon="chart-box-outline" onPress={() => setShowAxisOptions(!showAxisOptions)} />
-            </Appbar.Header>
+            <Portal.Host>
+                <Appbar.Header>
+                    <Appbar.BackAction onPress={() => { router.back() }}></Appbar.BackAction>
+                    <Appbar.Content title="Experiment" />
+                    <Appbar.Action icon={connectedDevice ? "bluetooth-connect" : "bluetooth-off"} onPress={() => { router.navigate('/') }} />
+                    <Appbar.Action icon="chart-box-outline" onPress={() => setShowAxisOptions(!showAxisOptions)} />
+                </Appbar.Header>
 
-            {showAxisOptions && (
-                <View style={[styles.graphSettings, { backgroundColor: theme.colors.elevation.level2 }]}>
-                    <Text variant="labelMedium" style={{ marginBottom: 4 }}>X Axis</Text>
-                    <SegmentedButtons
-                        value={xKey}
-                        onValueChange={val => setXKey(val as AxisOption)}
-                        buttons={[
-                            { value: 'time', label: 'Time' },
-                            { value: 'voltage', label: 'Voltage' },
-                            { value: 'current', label: 'Current' },
-                        ]}
-                        density="small"
-                        style={{ marginBottom: 8 }}
-                    />
-                    <Text variant="labelMedium" style={{ marginBottom: 4 }}>Y Axis</Text>
-                    <SegmentedButtons
-                        value={yKey}
-                        onValueChange={val => setYKey(val as AxisOption)}
-                        buttons={[
-                            { value: 'time', label: 'Time' },
-                            { value: 'voltage', label: 'Voltage' },
-                            { value: 'current', label: 'Current' },
-                        ]}
-                        density="small"
-                    />
-                </View>
-            )}
-
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-            >
-                <ScrollView>
-                    <View style={styles.chartContainer}>
-                        <CartesianChart
-                            data={results}
-                            xKey={xKey}
-                            yKeys={[yKey]}
-                            padding={16}
-                        >
-                            {({ points }) => (
-                                <Line
-                                    points={points[yKey]}
-                                    color={theme.colors.primary}
-                                    strokeWidth={2}
-                                    animate={{ type: "timing", duration: 100 }}
-                                />
-                            )}
-                        </CartesianChart>
-
-                        <Text style={styles.axisLabelX}>{xKey.toUpperCase()}</Text>
-                        <Text style={styles.axisLabelY}>{yKey.toUpperCase()}</Text>
-
-                        {results.length === 0 && (
-                            <View style={styles.chartPlaceholder}>
-                                <Text>No Data</Text>
-                            </View>
-                        )}
-                    </View>
-
-                    <Divider />
-
-
-                    <View style={styles.controls}>
+                {showAxisOptions && (
+                    <View style={[styles.graphSettings, { backgroundColor: theme.colors.elevation.level2 }]}>
+                        <Text variant="labelMedium" style={{ marginBottom: 4 }}>X Axis</Text>
                         <SegmentedButtons
-                            value={experimentType}
-                            onValueChange={changeExperimentType}
+                            value={xKey}
+                            onValueChange={val => setXKey(val as AxisOption)}
                             buttons={[
-                                { value: 'cv', label: 'CV' },
-                                { value: 'swv', label: 'SWV' },
-                                { value: 'dpv', label: 'DPV' },
-                                { value: 'ca', label: 'CA' },
+                                { value: 'time', label: 'Time' },
+                                { value: 'voltage', label: 'Voltage' },
+                                { value: 'current', label: 'Current' },
                             ]}
-                            style={styles.segmented}
+                            density="small"
+                            style={{ marginBottom: 8 }}
                         />
-
-                        <Card mode="outlined" style={styles.configCard}>
-                            <Card.Content>
-                                {/* Dynamically render the correct form */}
-                                {experimentType === 'cv' && (
-                                    <CVConfigForm onChange={setConfigParams} />
-                                )}
-                                {experimentType === 'swv' && (
-                                    <SWVConfigForm onChange={setConfigParams} />
-                                )}
-                                {experimentType === 'dpv' && (
-                                    <DPVConfigForm onChange={setConfigParams} />
-                                )}
-                                {experimentType === 'ca' && (
-                                    <CAConfigForm onChange={setConfigParams} />
-                                )}
-                            </Card.Content>
-                        </Card>
-
-                        <View style={styles.actionButtons}>
-                            <Button
-                                mode = "contained"
-                                icon="check"
-                                onPress={handleApply}
-                                disabled={isRunning || !connectedDevice || !configParams}
-                            >
-                                Apply
-                            </Button>
-
-                            <Button
-                                mode="contained"
-                                icon={isRunning ? "stop" : "play"}
-                                onPress={isRunning ? handleStop : handleStart}
-                                disabled={!connectedDevice || !configParams}
-                            >
-                                {isRunning ? "Stop" : "Start"}
-                            </Button>
-
-                            <Button
-                                mode="outlined"
-                                icon="file-excel-outline"
-                                onPress={() => exportCSV()}
-                                disabled={results.length === 0}
-                            >
-                                Export CSV
-                            </Button>
-                        </View>
+                        <Text variant="labelMedium" style={{ marginBottom: 4 }}>Y Axis</Text>
+                        <SegmentedButtons
+                            value={yKey}
+                            onValueChange={val => setYKey(val as AxisOption)}
+                            buttons={[
+                                { value: 'time', label: 'Time' },
+                                { value: 'voltage', label: 'Voltage' },
+                                { value: 'current', label: 'Current' },
+                            ]}
+                            density="small"
+                        />
                     </View>
-                </ScrollView>
-                <Portal>
-                    <Snackbar
-                        visible={snackBarVisible}
-                        onDismiss={() => setSnackBarVisible(false)}
-                        action={{
-                            label: "Dismiss",
-                            onPress: () => {
-                                setSnackBarVisible(false);
-                            },
-                        }}
-                    >
-                        {snackBarMessage}
-                    </Snackbar>
-                </Portal>
-            </KeyboardAvoidingView>
-        </View>
+                )}
+
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+                >
+
+                    <ScrollView>
+                        <View style={styles.chartContainer}>
+                            <CartesianChart
+                                data={results}
+                                xKey={xKey}
+                                yKeys={[yKey]}
+                                padding={16}
+                            >
+                                {({ points }) => (
+                                    <Line
+                                        points={points[yKey]}
+                                        color={theme.colors.primary}
+                                        strokeWidth={2}
+                                        animate={{ type: "timing", duration: 100 }}
+                                    />
+                                )}
+                            </CartesianChart>
+
+                            <Text style={styles.axisLabelX}>{xKey.toUpperCase()}</Text>
+                            <Text style={styles.axisLabelY}>{yKey.toUpperCase()}</Text>
+
+                            {results.length === 0 && (
+                                <View style={styles.chartPlaceholder}>
+                                    <Text>No Data</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        <Divider />
+
+                        <View style={styles.controls}>
+                            <View style={styles.actionButtons}>
+                                <Button
+                                    mode="contained"
+                                    icon="check"
+                                    onPress={handleApply}
+                                    disabled={isRunning || !connectedDevice || !configParams}
+                                >
+                                    Apply
+                                </Button>
+
+                                <Button
+                                    mode="contained"
+                                    icon={isRunning ? "stop" : "play"}
+                                    onPress={isRunning ? handleStop : handleStart}
+                                    disabled={!connectedDevice || !configParams}
+                                >
+                                    {isRunning ? "Stop" : "Start"}
+                                </Button>
+
+                                <Button
+                                    mode="outlined"
+                                    icon="file-excel-outline"
+                                    onPress={() => exportCSV()}
+                                    disabled={results.length === 0}
+                                >
+                                    Export CSV
+                                </Button>
+                            </View>
+
+                            <SegmentedButtons
+                                value={experimentType}
+                                onValueChange={changeExperimentType}
+                                buttons={[
+                                    { value: 'cv', label: 'CV' },
+                                    { value: 'swv', label: 'SWV' },
+                                    { value: 'dpv', label: 'DPV' },
+                                    { value: 'ca', label: 'CA' },
+                                ]}
+                            />
+
+                            <Card mode="outlined">
+                                <Card.Content>
+                                    {/* Dynamically render the correct form */}
+                                    {experimentType === 'cv' && (
+                                        <CVConfigForm onChange={setConfigParams} />
+                                    )}
+                                    {experimentType === 'swv' && (
+                                        <SWVConfigForm onChange={setConfigParams} />
+                                    )}
+                                    {experimentType === 'dpv' && (
+                                        <DPVConfigForm onChange={setConfigParams} />
+                                    )}
+                                    {experimentType === 'ca' && (
+                                        <CAConfigForm onChange={setConfigParams} />
+                                    )}
+                                </Card.Content>
+                            </Card>
+                        </View>
+                    </ScrollView>
+                    <Portal>
+                        <Snackbar
+                            visible={snackBarVisible}
+                            onDismiss={() => setSnackBarVisible(false)}
+                            action={{
+                                label: "Dismiss",
+                                onPress: () => {
+                                    setSnackBarVisible(false);
+                                },
+                            }}
+                        >
+                            {snackBarMessage}
+                        </Snackbar>
+                    </Portal>
+
+                </KeyboardAvoidingView>
+            </Portal.Host>
+        </View >
     );
 }
 
@@ -427,14 +432,10 @@ const styles = StyleSheet.create({
     controls: {
         flex: 1,
         padding: 16,
-    },
-    segmented: {
-        marginBottom: 16,
-    },
-    configCard: {
-        marginBottom: 20,
+        gap: 16,
     },
     actionButtons: {
-        gap: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between'
     }
 });
