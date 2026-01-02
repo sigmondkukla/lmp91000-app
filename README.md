@@ -38,6 +38,7 @@ bun run android
 For a final/release build, use
 
 ```bash
+bunx react-native doctor
 bunx react-native build-android --mode=release
 ```
 
